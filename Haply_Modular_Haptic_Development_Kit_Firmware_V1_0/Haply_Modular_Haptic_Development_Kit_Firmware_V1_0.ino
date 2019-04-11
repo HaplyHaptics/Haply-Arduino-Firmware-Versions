@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <Encoder.h>
 #include <pwm01.h>
-#include "Haply_Arduino_Firmware.h"
+#include "Haply_Modular_Haptic_Development_Kit_Firmware_V1_0.h"
 
 
 /* Actuator, Encoder, Sensors parameter declarations *******************************************/
