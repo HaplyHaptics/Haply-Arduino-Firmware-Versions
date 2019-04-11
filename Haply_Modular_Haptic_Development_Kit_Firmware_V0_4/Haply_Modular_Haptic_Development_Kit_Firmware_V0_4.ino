@@ -2,8 +2,8 @@
  ************************************************************************************************
  * @file       Haply_Arduino_Firmware.ino
  * @author     Steve Ding, Colin Gallacher
- * @version    V1.0.0
- * @date       30-July-2017
+ * @version    V1.5.0
+ * @date       11-September-2017
  * @brief      Haply board firmware for encoder and sensor read and torque write using on-board 
  *             actuator ports
  ************************************************************************************************
@@ -17,13 +17,13 @@
 #include <stdlib.h>
 #include <Encoder.h>
 #include <pwm01.h>
-#include "Haply_Modular_Haptic_Development_Kit_Firmware_V1_0.h"
+#include "Haply_Modular_Haptic_Development_Kit_Firmware_V0_4.h"
 
 
 /* Actuator, Encoder, Sensors parameter declarations *******************************************/
 actuator actuators[TOTAL_ACTUATOR_PORTS];
 encoder encoders[TOTAL_ACTUATOR_PORTS];
-sensor digitalSensors[DIGITAL_PINS];
+pwm pwmPins[PWM_PINS];
 sensor analogSensors[ANALOG_PINS];
 
 
@@ -49,6 +49,7 @@ long lastPublished = 0;
  */
 void setup() {
   SerialUSB.begin(0);
+  reset_device(actuators, encoders, analogSensors, pwmPins);
 }
 
 
@@ -67,13 +68,13 @@ void loop() {
 
       switch(cmdCode){
         case 0:
-          deviceAddress = reset_haply(actuators, encoders, analogSensors, digitalSensors);
+          deviceAddress = reset_haply(actuators, encoders, analogSensors, pwmPins);
           break;
         case 1:
-          deviceAddress = setup_device(actuators, encoders, analogSensors, digitalSensors);
+          deviceAddress = setup_device(actuators, encoders, analogSensors, pwmPins);
           break;
         case 2:
-          deviceAddress = write_states(actuators);
+          deviceAddress = write_states(pwmPins, actuators);
           replyCode = 1;
           break;
         default:
@@ -85,7 +86,7 @@ void loop() {
       case 0:
         break;
       case 1:
-        read_states(encoders, digitalSensors, analogSensors, deviceAddress);
+        read_states(encoders, analogSensors, deviceAddress);
         replyCode = 3;
         break;
       default:

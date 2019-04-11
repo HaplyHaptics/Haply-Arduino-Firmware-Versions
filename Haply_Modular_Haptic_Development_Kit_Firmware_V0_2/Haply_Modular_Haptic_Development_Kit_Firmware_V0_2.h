@@ -2,7 +2,7 @@
  ************************************************************************************************
  * @file       Haply_Arduino_Firmware.h
  * @author     Steve Ding, Colin Gallacher
- * @version    V1.5.0
+ * @version    V1.0.0
  * @date       30-July-2017
  * @brief      Haply board firmware header 
  ************************************************************************************************
@@ -16,7 +16,7 @@
 #define TOTAL_ACTUATOR_PORTS		  4
 
 /* maximum number of available input pins ****************************************************************************/
-#define	PWM_PINS				          14
+#define	DIGITAL_PINS				      12
 #define ANALOG_PINS					      12	
 
 /* number of setup parameters per encoder ****************************************************************************/
@@ -51,8 +51,6 @@
 #define DIRPIN4					          30
 
 #define PWMFREQ                   40000
-#define MAX_TORQUE                0.123 //Nm
-#define PWM_OUTPUT_RESOLUTION     4095
 
 
 /* Rotation direction definitions ************************************************************************************/
@@ -64,7 +62,7 @@
 typedef struct motor{
 	int hostAddress;
 
-  int rotationalDirection;
+  int rotation;
 	int pwmPin;
 	int dirPin;	
 }actuator;
@@ -74,7 +72,7 @@ typedef struct motor{
 typedef struct enc{
 	int hostAddress;
 
-  int rotationalDirection;
+  int rotation;
 	float EncOffset;
 	float EncResolution;
 	
@@ -89,37 +87,26 @@ typedef struct sen{
 }sensor;
 
 
-/* pwm struct definitions ********************************************************************************************/
-typedef struct pulseWidth{
-  int hostAddress;
-  int pulse;
-  int pwmPin;
-}pwm;
-
-
 /* communication function definitions ********************************************************************************/
 byte command_instructions();
-byte reset_haply(actuator actuators[], encoder encoders[], sensor analog[], pwm pulse[]);
-byte setup_device(actuator actuators[], encoder encoders[], sensor analog[], pwm pulse[]);
+byte reset_haply(actuator actuators[], encoder encoders[], sensor analog[], sensor digital[]);
+byte setup_device(actuator actuators[], encoder encoders[], sensor analog[], sensor digital[]);
 byte write_states(actuator actuators[]);
-void read_states(encoder encoders[], sensor analog_sensors[], byte device_address);
+void read_states(encoder encoders[], sensor digital_sensors[], sensor analog_sensors[], byte device_address);
 
 /* system setup command function definitions *************************************************************************/
-void reset_device(actuator actuators[], encoder encoders[], sensor analog[], pwm pulse[]);
-void setup_sensors(sensor analog[], byte sensors_active, byte device_address);
-void setup_pwms(pwm pulse[], byte pwms_active, byte device_address);
+void setup_sensors(sensor analog[], sensor digital[], byte sensors_active, byte device_address);
 void setup_encoders(encoder encoders[], byte device_address, byte motors_active[], byte encoder_parameters[]);
 void setup_actuators(actuator actuators[], byte device_address, byte motors_active[]);
 
 /* component initialization function definitions *********************************************************************/
 void initialize_analog(sensor *analog, byte sensor_port, byte device_address);
-void initialize_pwm(pwm *pulse, byte pwm_pin, byte device_address);
+void initialize_digital(sensor *digital, byte sensor_port, byte device_address);
 void initialize_encoder(encoder *enc, byte device_address, byte parameters[], int enc1, int enc2);
 void initialize_actuator(actuator *mtr, byte device_address, int pwm, int dir);
 
 /* state control function definitions ********************************************************************************/
 void create_torque(actuator *mtr, float torque);
-void create_pulse(actuator actuators[], pwm *pin);
 float read_analog_sensor(sensor *analog);
 float read_digital_sensor(sensor *digital);
 float read_encoder_value(encoder *enc);
@@ -141,7 +128,7 @@ byte command_instructions(){
 }
 
 
-byte reset_haply(actuator actuators[], encoder encoders[], sensor analog[], pwm pulse[]){
+byte reset_haply(actuator actuators[], encoder encoders[], sensor analog[], sensor digital[]){
 	
 	byte deviceAddress = SerialUSB.read();
 	
@@ -150,10 +137,8 @@ byte reset_haply(actuator actuators[], encoder encoders[], sensor analog[], pwm 
 		encoders[i].hostAddress = 0;
 	}
 	
-	for(int i = 0; i < PWM_PINS; i++){
-		pulse[i].hostAddress = 0;
-    pulse[i].pulse = 0;
-    analogWrite(pulse[i].pwmPin, pulse[i].pulse);
+	for(int i = 0; i < DIGITAL_PINS; i++){
+		digital[i].hostAddress = 0;
 	}
 	
 	for(int i = 0; i < ANALOG_PINS; i++){
@@ -164,9 +149,7 @@ byte reset_haply(actuator actuators[], encoder encoders[], sensor analog[], pwm 
 }
 
 
-byte setup_device(actuator actuators[], encoder encoders[], sensor analog[], pwm pulse[]){
-
-  reset_device(actuators, encoders, analog, pulse);
+byte setup_device(actuator actuators[], encoder encoders[], sensor analog[], sensor digital[]){
 	
 	byte motorsActive[4];
 	byte encodersActive[4];
@@ -175,12 +158,10 @@ byte setup_device(actuator actuators[], encoder encoders[], sensor analog[], pwm
 	byte deviceAddress = SerialUSB.read();
 	byte motorNumbers = mtr_parameters(motorsActive, actuators);
 	byte encoderNumbers = enc_parameters(encodersActive, encoders);
-	
 	byte sensorsActive = SerialUSB.read();
-	setup_sensors(analog, sensorsActive, deviceAddress);
+	
+	setup_sensors(analog, digital, sensorsActive, deviceAddress);
 
-  byte pwmsActive = SerialUSB.read();
-  setup_pwms(pulse, pwmsActive, deviceAddress);
 
 	if(encoderNumbers > 0){
 		byte encoderParameters[encoderNumbers * ENCODER_PARAMETERS * 4];
@@ -195,20 +176,14 @@ byte setup_device(actuator actuators[], encoder encoders[], sensor analog[], pwm
 }
 
 
-byte write_states(pwm pwmPins[], actuator actuators[]){
+byte write_states(actuator actuators[]){
 	
 	int dataLength = 0;
 	byte segments[4];
 	byte deviceAddress = SerialUSB.read();
-
-  for(int i = 0; i < PWM_PINS; i++){
-    if(pwmPins[i].hostAddress == deviceAddress ){
-      pwmPins[i].pulse = SerialUSB.read();
-      create_pulse(actuators, &pwmPins[i]);
-    }
-  }
-  
+	
 	for(int i = 0; i < TOTAL_ACTUATOR_PORTS; i++){
+		
 		if(actuators[i].hostAddress == deviceAddress){
 			dataLength++;
 		}
@@ -233,7 +208,7 @@ byte write_states(pwm pwmPins[], actuator actuators[]){
 }
 
 
-void read_states(encoder encoders[], sensor analogSensors[], byte deviceAddress){
+void read_states(encoder encoders[], sensor digitalSensors[], sensor analogSensors[], byte deviceAddress){
 
 	int dataLength = 0;
 	float value;
@@ -241,6 +216,12 @@ void read_states(encoder encoders[], sensor analogSensors[], byte deviceAddress)
 	
 	for(int i = 0; i < ANALOG_PINS; i++){
 		if(analogSensors[i].hostAddress == deviceAddress){
+			dataLength++;
+		}
+	}
+	
+	for(int i = 0; i < DIGITAL_PINS; i++){
+		if(digitalSensors[i].hostAddress == deviceAddress){
 			dataLength++;
 		}
 	}
@@ -264,7 +245,16 @@ void read_states(encoder encoders[], sensor analogSensors[], byte deviceAddress)
 			j = j + 4;
 		}
 	}
-  
+	
+	for(int i = 0; i < DIGITAL_PINS; i++){
+		if(digitalSensors[i].hostAddress == deviceAddress){
+			value = read_digital_sensor(&digitalSensors[i]);
+			FloatToBytes(value, segments);
+			ArrayCopy(segments, 0, stateValues, j, 4);
+			j = j + 4;
+		}
+	}
+	
 	for(int i = 0; i < TOTAL_ACTUATOR_PORTS; i++){
 		if(encoders[i].hostAddress == deviceAddress){
 			value = read_encoder_value(&encoders[i]);
@@ -280,26 +270,8 @@ void read_states(encoder encoders[], sensor analogSensors[], byte deviceAddress)
 
 
 /* system setup command functions ************************************************************************************/
-void reset_device(actuator actuators[], encoder encoders[], sensor analog[], pwm pulse[]){
-  
-  for(int i = 0; i < TOTAL_ACTUATOR_PORTS; i++){
-    actuators[i].hostAddress = 0;
-    encoders[i].hostAddress = 0;
-  }
 
-  for(int i = 0; i < PWM_PINS; i++){
-    pulse[i].hostAddress = 0;
-    pulse[i].pulse = 0;
-    analogWrite(pulse[i].pwmPin, pulse[i].pulse);
-  }
-
-  for(int i = 0; i < ANALOG_PINS; i++){
-    analog[i].hostAddress = 0;
-  }
-}
-
-
-void setup_sensors(sensor analog[], byte sensorsActive, byte deviceAddress){
+void setup_sensors(sensor analog[], sensor digital[], byte sensorsActive, byte deviceAddress){
 
 		byte sensorPort;
 		
@@ -307,27 +279,14 @@ void setup_sensors(sensor analog[], byte sensorsActive, byte deviceAddress){
 			
 			sensorPort = SerialUSB.read();
 			
-			if((sensorPort >= 54) && (sensorPort <= 65)){
+			if(sensorPort >= 54){
 				initialize_analog(&analog[sensorPort - 54], sensorPort, deviceAddress);
+			}
+			else{
+				initialize_digital(&digital[sensorPort - 2], sensorPort, deviceAddress);
 			}
 		}
 }
-
-
-void setup_pwms(pwm pulse[], byte pwmsActive, byte deviceAddress){
-
-    byte pwmPin;
-
-    for(int i = 0; i < pwmsActive; i++){
-
-      pwmPin = SerialUSB.read();
-
-      if((pwmPin >= 0) && (pwmPin <= 13)){
-        initialize_pwm(&pulse[pwmPin], pwmPin, deviceAddress);
-      }
-    }
-}
-
 
 void setup_encoders(encoder encoders[], byte deviceAddress, byte encodersActive[], byte encoderParameters[]){
 	
@@ -405,16 +364,13 @@ void initialize_analog(sensor *analog, byte sensorPort, byte deviceAddress){
 }
  
  
-void initialize_pwm(pwm *pulse, byte pwmPin, byte deviceAddress){
+void initialize_digital(sensor *digital, byte sensorPort, byte deviceAddress){
 	
-	pulse->hostAddress = deviceAddress;
-	pulse->pwmPin = pwmPin;
+	digital->hostAddress = deviceAddress;
+	digital->sensorPin = sensorPort;
 			
-	pinMode(pulse->pwmPin, OUTPUT);
-
-  if(pwmPin == 6 || pwmPin == 7 || pwmPin == 8 || pwmPin == 9){
-    pwm_setup(pulse->pwmPin, PWMFREQ, 1);
-  }
+	pinMode(digital->sensorPin, INPUT);
+	
 }
 
 
@@ -424,21 +380,15 @@ void initialize_encoder(encoder *enc, byte deviceAddress, byte parameters[], int
 	byte segments[4];
 	
 	enc->hostAddress = deviceAddress;
-	
+	enc->Enc = new Encoder(enc1, enc2);
+  
 	ArrayCopy(parameters, i, segments, 0, 4);
 	enc->EncOffset = BytesToFloat(segments);
 	i = i + 4;
 	
 	ArrayCopy(parameters, i, segments, 0, 4);
 	enc->EncResolution = BytesToFloat(segments);
-
-  if(enc->rotationalDirection > 0){
-    int temp = enc1;
-    enc1 = enc2;
-    enc2 = temp;
-  }
-
-  enc->Enc = new Encoder(enc1, enc2);
+	
 	enc->Enc->write(enc->EncOffset * enc->EncResolution / 360);
 }
 
@@ -449,10 +399,6 @@ void initialize_actuator(actuator *mtr, byte deviceAddress, int pwm, int dir){
   
 	mtr->pwmPin = pwm;
 	mtr->dirPin = dir;
-
-  if(dir == DIRPIN2 || dir == DIRPIN4){
-    mtr->rotationalDirection = 1 - mtr->rotationalDirection;
-  }
 	
 	pinMode(mtr->pwmPin, OUTPUT);
 	pinMode(mtr->dirPin, OUTPUT);
@@ -467,53 +413,24 @@ void initialize_actuator(actuator *mtr, byte deviceAddress, int pwm, int dir){
 void create_torque(actuator *mtr, float torque){
 	
 	int duty;
-  bool output = HIGH;
-
-  if(mtr->rotationalDirection == 0){
-    output = !output;  
-  }
 	
 	if(torque <= 0){
-		digitalWrite(mtr->dirPin, output);
+		digitalWrite(mtr->dirPin, HIGH);
 	}
 	else{
-		digitalWrite(mtr->dirPin, !output);
+		digitalWrite(mtr->dirPin, LOW);
 	}
 	
 	torque = abs(torque);
 	
-	if(torque > MAX_TORQUE){
-		torque = MAX_TORQUE;
+	if(torque > 0.123){
+		torque = 0.123;
 	}
 	
-	duty = PWM_OUTPUT_RESOLUTION * torque / MAX_TORQUE;
+	duty = 4095 * torque / 0.123;
 	
 	pwm_write_duty(mtr->pwmPin, duty);
 }
-
-
-void create_pulse(actuator actuators[], pwm *pin){
-
-  int check = 1; 
-  
-  for(int i = 0; i < TOTAL_ACTUATOR_PORTS; i++){
-    if(actuators[i].pwmPin == pin->pwmPin){
-      check = 0;
-    }
-  }
-
-  if(check){
-
-    if(pin->pwmPin == 6 || pin->pwmPin == 7 || pin->pwmPin == 8 || pin->pwmPin == 9){
-      int duty = pin->pulse * 4095 / 255;
-      pwm_write_duty(pin->pwmPin, duty);
-    }
-    else{
-      analogWrite(pin->pwmPin, pin->pulse);
-    }
-  }
-}
-
 
 
 float read_analog_sensor(sensor *analog){
@@ -557,7 +474,7 @@ byte mtr_parameters(byte sequence[], actuator actuators[]){
 	}
 
   for(int i = 0; i < motorCount; i++){
-    actuators[i].rotationalDirection = SerialUSB.read();
+    actuators[i].rotation = SerialUSB.read();
   }
 	
 	return (byte)motorCount;
@@ -580,7 +497,7 @@ byte enc_parameters(byte sequence[], encoder encoders[]){
   }
 
   for(int i = 0; i < encoderCount; i++){
-    encoders[i].rotationalDirection = SerialUSB.read();
+    encoders[i].rotation = SerialUSB.read();
   }
   
   return (byte)encoderCount;
