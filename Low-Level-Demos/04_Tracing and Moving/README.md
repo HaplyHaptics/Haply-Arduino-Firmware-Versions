@@ -26,7 +26,7 @@ The recommended lesson order is shown below
     Haplet](./04_Tracing%20and%20Moving/02_TorqueToHaplet.md)
 
 3.  [Tracking Mouse: Mouse Tracker to Torque
-    PDE](./04_Tracing%20and%20Moving/03_MouseTrackerToTorque)
+    PDE](./04_Tracing%20and%20Moving/03_MouseTrackertoTorque_PDE.md)
 
 <img src="Images/Tracker.gif" width ="200px">
 
