@@ -56,6 +56,6 @@
 
 
 
-3. [Torque to Haplet](./04_Tracing%20and%20Moving/03_MouseTrackerToTorque_PDE.md)
+3. [Torque to Haplet](./04_Tracing%20and%20Moving/03_MouseTrackertoTorque_PDE.md)
 
 <img src="04_Tracing%20and%20Moving/Images/Tracker.gif" width ="200px">
