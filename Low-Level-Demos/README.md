@@ -52,10 +52,10 @@
 
 <img src="04_Tracing%20and%20Moving/Images/Circle.gif" width ="200px">
 
-2. [Mouse Tracker to Torque](./04_Tracing%20and%Moving/02_TorqueToHaplet.md)
+2. [Mouse Tracker to Torque](./04_Tracing%20and%20Moving/02_TorqueToHaplet.md)
 
 
 
-3. [Torque to Haplet](./04_Tracing%20and%Moving/03_MouseTrackerToTorque.md)
+3. [Torque to Haplet](./04_Tracing%20and%20Moving/03_MouseTrackerToTorque.md)
 
 <img src="04_Tracing%20and%20Moving/Images/Tracker.gif" width ="200px">
