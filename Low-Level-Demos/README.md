@@ -1,7 +1,7 @@
 # Table of Contents
 
-## [Getting Started](/01_Getting%20Started)
-1. [Two Pots to Angles](/01_Getting%20Started/01_TwoPotsToAngles.md)
+## [Getting Started](./01_Getting%20Started)
+1. [Two Pots to Angles](./01_Getting%20Started/01_TwoPotsToAngles.md)
 
 <img src="01_Getting%20Started/Images/IMG_3489.JPG" width ="200px">
 
