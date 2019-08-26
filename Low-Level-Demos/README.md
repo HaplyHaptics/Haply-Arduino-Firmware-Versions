@@ -48,7 +48,7 @@
 2. [Send and Receive Floats](./03_Sending%20and%20Recieving%20Floats/02_SendAndReceiveFloats.md)
 
 ## [Tracing and Moving](./04_Tracing%20and%20Moving)
-1. [Draw Circle](./04_Tracing%20and%Moving/01_DrawCircle.md)
+1. [Draw Circle](./04_Tracing%20and%20Moving/01_DrawCircle.md)
 
 <img src="04_Tracing%20and%20Moving/Images/Circle.gif" width ="200px">
 
