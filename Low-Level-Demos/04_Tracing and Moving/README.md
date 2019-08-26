@@ -18,15 +18,15 @@ working with our Haplet. That being said, because these are more
 **abstract tasks** each lesson is far more dense than the previous ones.
 The recommended lesson order is shown below
 
-1.  [Draw Circle](/04_Tracing%20and%20Moving/01_DrawCircle.md)
+1.  [Draw Circle](./01_DrawCircle.md)
 
 <img src="Images/Circle.gif" width ="200px">
 
 2.  [Tracking Mouse: Torque to
-    Haplet](/04_Tracing%20and%20Moving/02_TorqueToHaplet.md)
+    Haplet](./02_TorqueToHaplet.md)
 
 3.  [Tracking Mouse: Mouse Tracker to Torque
-    PDE](/04_Tracing%20and%20Moving/03_MouseTrackertoTorque_PDE.md)
+    PDE](./03_MouseTrackertoTorque_PDE.md)
 
 <img src="Images/Tracker.gif" width ="200px">
 
